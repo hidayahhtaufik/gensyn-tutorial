@@ -213,9 +213,28 @@ setup_localtunnel() {
         if [ -n "$TUNNEL_URL" ]; then
             echo -e "${GREEN}[✓] Remote access enabled${NC}"
             echo -e "${BOLD}URL: ${GREEN}$TUNNEL_URL${NC}"
-            PASSWORD=$(curl -s https://loca.lt/mytunnelpassword 2>/dev/null)
-            [ -z "$PASSWORD" ] && PASSWORD=$(hostname -I | awk '{print $1}')
-            echo -e "${BOLD}Password: ${YELLOW}$PASSWORD${NC}\n"
+            
+            # Get IPv4 address (not IPv6)
+            PASSWORD=""
+            
+            # Method 1: Force IPv4 with ifconfig.me
+            PASSWORD=$(curl -4 -s ifconfig.me 2>/dev/null)
+            
+            # Method 2: Force IPv4 with ipinfo.io
+            [ -z "$PASSWORD" ] && PASSWORD=$(curl -4 -s ipinfo.io/ip 2>/dev/null)
+            
+            # Method 3: Use ip command to get IPv4
+            [ -z "$PASSWORD" ] && PASSWORD=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v 127.0.0.1 | head -1)
+            
+            # Method 4: Try loca.lt endpoint
+            [ -z "$PASSWORD" ] && PASSWORD=$(curl -s https://loca.lt/mytunnelpassword 2>/dev/null)
+            
+            echo -e "${BOLD}Password (IPv4): ${YELLOW}$PASSWORD${NC}"
+            
+            # Show alternative methods if needed
+            echo -e "${CYAN}If password doesn't work, try:${NC}"
+            echo -e "${CYAN}  curl -4 ifconfig.me${NC}\n"
+            
             echo "$TUNNEL_URL" > /tmp/tunnel_url.txt
             echo "$PASSWORD" > /tmp/tunnel_pass.txt
         else

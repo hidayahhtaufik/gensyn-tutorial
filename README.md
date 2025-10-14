@@ -149,8 +149,22 @@ export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
 
 ### Localtunnel Not Working
 ```bash
+# Reinstall
+npm uninstall -g localtunnel
 npm install -g localtunnel
 lt --port 3000
+```
+
+**Localtunnel Password Error:**
+```bash
+# Get IPv4 address (NOT IPv6!)
+curl -4 ifconfig.me
+
+# Or use this
+curl -4 ipinfo.io/ip
+
+# Use the IPv4 address as password
+# Example: 46.4.156.234 (NOT 2a01:4f8:...)
 ```
 
 ### Lost swarm.pem
