@@ -101,7 +101,6 @@ handle_existing_swarm() {
                 cd $HOME && git clone https://github.com/gensyn-ai/rl-swarm.git -q
                 echo -e "${GREEN}${BOLD}[✓] Fresh installation ready${NC}\n"
                 break
-                
             else
                 echo -e "${RED}[✗] Invalid choice. Please enter 1 or 2.${NC}"
             fi
