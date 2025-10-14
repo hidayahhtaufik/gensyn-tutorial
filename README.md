@@ -1,40 +1,30 @@
-# 🐝 Gensyn RL-SWARM Tutorial
+# 🐝 Gensyn RL-SWARM Auto Installer
 
-**One-click installation script for running Gensyn RL-SWARM nodes**
+**One powerful command to run Gensyn RL-SWARM nodes**
 
 [![Twitter](https://img.shields.io/twitter/follow/Hidayahhtaufik?style=social)](https://twitter.com/Hidayahhtaufik)
 [![GitHub](https://img.shields.io/github/stars/hidayahhtaufik/gensyn-tutorial?style=social)](https://github.com/hidayahhtaufik/gensyn-tutorial)
 
 ## 🚀 Quick Start
 
-### One-Line Installation
-
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 ```
 
-That's it! The script will:
-- ✅ Install all dependencies automatically
-- ✅ Setup localtunnel for easy access
-- ✅ Handle existing swarm.pem (or create new)
-- ✅ Start training immediately
+**That's it!** The installer handles everything automatically.
 
-## 📋 What This Script Does
+---
 
-### Features
-- **Auto-dependency installation**: curl, wget, git, python3, npm, localtunnel
-- **Smart swarm.pem handling**: Keep your identity or start fresh
-- **Automatic localtunnel**: No port forwarding needed!
-- **GPU detection**: Automatically detects NVIDIA GPUs
-- **Screen session management**: Runs in background
+## 💪 Features
 
-### Installation Steps
-The script automatically:
-1. Checks and installs dependencies
-2. Handles existing swarm.pem file
-3. Sets up localtunnel for localhost:3000
-4. Detects GPU (if available)
-5. Starts RL-SWARM training
+- ✅ **Auto-install dependencies** - Everything you need, automatically
+- ✅ **Smart identity management** - Keep, restore, or create new
+- ✅ **Training optimization** - Default, low memory, or custom
+- ✅ **Auto backup script** - Creates ~/backup-swarm.sh
+- ✅ **Remote access** - Optional localtunnel for VPS/VM
+- ✅ **GPU/CPU detection** - Works on any hardware
+
+---
 
 ## 🖥️ System Requirements
 
@@ -48,197 +38,208 @@ The script automatically:
 - **RAM**: 24GB+
 - **Python**: >= 3.10
 
-## 📖 Detailed Guide
+---
 
-### Step 1: Run Installation
+## 📖 Installation Guide
+
+### 1. Run the Installer
 
 ```bash
-# One-line install
 bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 ```
 
-### Step 2: Choose Identity Option
+### 2. Choose Your Options
 
-When the script detects existing `swarm.pem`:
-- **Option 1**: Use existing (keeps your node identity and rewards)
-- **Option 2**: Start fresh (new identity)
+**Identity:**
+- Keep existing (if found)
+- Restore from backup
+- Start fresh
 
-### Step 3: Access Login Page
+**Training:**
+- Default (for GPU)
+- Low memory (for CPU)
+- Custom
 
-The script will show:
+**Network:**
+- Remote access (VPS/VM)
+- Localhost only
+
+### 3. Login and Start
+
 ```
-Tunnel URL: https://xxxx.loca.lt
-Password: your-vps-ip or from https://loca.lt/mytunnelpassword
+Access: https://xxxx.loca.lt
+Password: shown-in-terminal
 ```
 
-1. Open the tunnel URL in browser
-2. Enter the password
+1. Open URL
+2. Enter password
 3. Login with email/Google
-4. Training starts automatically!
+4. Done! 🎉
 
-### Step 4: Track Progress
+---
 
-- **Dashboard**: https://dashboard.gensyn.ai
-- **Explorer**: https://gensyn-testnet.explorer.alchemy.com
-- **Your terminal**: Live training logs
+## 💾 Backup Your Identity
 
-## 🔧 Manual Installation (Advanced)
-
-If you prefer manual control:
-
+### Auto Backup
 ```bash
-# 1. Clone repo
-git clone https://github.com/gensyn-ai/rl-swarm
-cd rl-swarm
-
-# 2. Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# 3. Setup localtunnel (in another terminal)
-npm install -g localtunnel
-lt --port 3000
-
-# 4. Run swarm
-./run_rl_swarm.sh
+~/backup-swarm.sh
 ```
 
-## 📊 Monitoring Your Node
+### Manual Backup
+```bash
+cp ~/rl-swarm/swarm.pem ~/swarm_backup.pem
+```
+
+**⚠️ Important:** Always backup `swarm.pem` before updates!
+
+---
+
+## 📊 Monitor Your Node
+
+### Dashboard
+- Main: https://dashboard.gensyn.ai
+- Stats: https://gensyn-node.vercel.app
 
 ### Check Logs
 ```bash
-# Reattach to screen session
-screen -r gensyn
-
-# Detach: Ctrl+A then D
+tail -f ~/rl-swarm/logs/swarm.log
 ```
 
-### Check Stats
-Visit these URLs:
-- Dashboard: https://dashboard.gensyn.ai
-- Your wins: https://gensyn-node.vercel.app (enter your peer ID)
-
-### What to Look For
-- ✅ **Participation**: Number of rounds completed
-- ✅ **Training Rewards**: Rewards earned
-- ✅ **Peer ID**: Your unique animal name (e.g., "eager squinting bee")
-- ✅ **Connected EOA**: Your wallet address (should NOT be 0x000...)
-
-## 🛠️ Troubleshooting
-
-### Node Not Training?
+### Reattach Screen
 ```bash
-# Check if screen session is running
-screen -ls
-
-# Reattach to see logs
 screen -r gensyn
+# Ctrl+A then D to detach
 ```
 
-### Localtunnel Not Working?
+---
+
+## 🛠️ Common Commands
+
 ```bash
-# Install manually
+# Backup identity
+~/backup-swarm.sh
+
+# View logs
+tail -f ~/rl-swarm/logs/swarm.log
+
+# Reattach screen
+screen -r gensyn
+
+# Check GPU
+nvidia-smi
+
+# Reduce memory usage
+cd ~/rl-swarm
+sed -i -E 's/(num_train_samples:\s*)2/\11/' rgym_exp/config/rg-swarm.yaml
+```
+
+---
+
+## 🆘 Troubleshooting
+
+### OOM (Out of Memory) Error
+```bash
+# Reduce training samples
+cd ~/rl-swarm
+sed -i -E 's/(num_train_samples:\s*)2/\11/' rgym_exp/config/rg-swarm.yaml
+
+# For MacBook
+export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+```
+
+### Localtunnel Not Working
+```bash
 npm install -g localtunnel
-
-# Run in new terminal
 lt --port 3000
 ```
 
-### Want to Use Different Email?
+### Lost swarm.pem
 ```bash
-# Delete existing identity
-rm ~/rl-swarm/swarm.pem
-rm ~/rl-swarm/modal-login/temp-data/*.json
-
-# Run installation again
-bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
+# Check backups
+ls ~/gensyn-backup*/
+# Or start fresh and run installer again
 ```
 
-### OOM Errors (Out of Memory)?
+### Node Not Training
 ```bash
-# For MacBook users
-export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+# Check logs
+tail -50 ~/rl-swarm/logs/swarm.log
 
-# Then restart swarm
-cd ~/rl-swarm
-source .venv/bin/activate
-./run_rl_swarm.sh
-```
-
-## 🔄 Updating Your Node
-
-When Gensyn releases updates:
-
-```bash
-# Stop current node
+# Restart
 screen -r gensyn
-# Press Ctrl+C
+# Press Ctrl+C, then restart
+```
 
-# Run installation again (it will backup swarm.pem)
+---
+
+## 🔄 Update Node
+
+```bash
+# Backup first!
+~/backup-swarm.sh
+
+# Run installer again
 bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 
-# Choose option 1 to keep your identity
+# Choose: Keep existing identity
 ```
+
+---
 
 ## 📁 Important Files
 
-### Your Identity Files
-- `~/rl-swarm/swarm.pem` - **BACKUP THIS!** Your node identity
-- `~/rl-swarm/modal-login/temp-data/userData.json` - User data
-- `~/rl-swarm/modal-login/temp-data/userApiKey.json` - API keys
+```bash
+~/rl-swarm/swarm.pem                           # Your identity (BACKUP!)
+~/rl-swarm/modal-login/temp-data/*.json        # User data
+~/rl-swarm/logs/swarm.log                      # Training logs
+~/rl-swarm/rgym_exp/config/rg-swarm.yaml       # Configuration
+```
 
-### Logs
-- `~/rl-swarm/logs/swarm.log` - Main training logs
-- `~/rl-swarm/logs/yarn.log` - Login server logs
+---
 
-## 🎯 Tips for Better Performance
+## 💡 Pro Tips
 
-1. **Keep swarm.pem safe**: Backup to multiple locations
-2. **Use same email for multiple nodes**: Link all to one wallet
-3. **Check dashboard daily**: Track your progress and rewards
-4. **Join community**: [Gensyn Discord](https://discord.gg/AdnyWNzXh5)
-5. **Don't worry about skipped rounds**: Normal on slower hardware
+1. **Multiple Nodes**: Use same email = linked to same wallet
+2. **Backup Often**: Run `~/backup-swarm.sh` regularly
+3. **Check Dashboard Daily**: Track progress and rewards
+4. **Join Discord**: https://discord.gg/AdnyWNzXh5
 
-## 🐝 Understanding the Swarm
-
-### How It Works
-- **Stage 1 (Answering)**: Your model solves reasoning problems
-- **Stage 2 (Critiquing)**: Models review each other's answers  
-- **Stage 3 (Resolving)**: Collective decision on best answer
-
-### Why It's Fast
-- **SAPO Algorithm**: 94% faster learning vs solo training
-- **Collective Intelligence**: Learn from thousands of nodes
-- **Shared Rollouts**: Breakthroughs propagate across network
+---
 
 ## 🤝 Contributing
 
 Found a bug? Have an improvement?
 
 1. Fork this repo
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+2. Create feature branch
+3. Commit changes
+4. Push to branch
+5. Open Pull Request
+
+---
 
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/hidayahhtaufik/gensyn-tutorial/issues)
 - **Twitter**: [@Hidayahhtaufik](https://twitter.com/Hidayahhtaufik)
-- **Official**: [Gensyn Discord](https://discord.gg/AdnyWNzXh5)
+- **Discord**: [Gensyn Official](https://discord.gg/AdnyWNzXh5)
+
+---
 
 ## ⚠️ Disclaimer
 
-This is an experimental testnet. The software is provided "as-is" for users interested in helping develop the Gensyn Protocol.
+This is experimental testnet software. Provided "as-is" for users interested in helping develop the Gensyn Protocol.
+
+---
 
 ## 📜 License
 
-MIT License - feel free to use, modify, and distribute!
+MIT License - Free to use, modify, and distribute!
 
 ---
 
 <p align="center">
-Made with ❤️ by <a href="https://twitter.com/Hidayahhtaufik">@Hidayahhtaufik</a>
+<b>Made with ❤️ by <a href="https://twitter.com/Hidayahhtaufik">@Hidayahhtaufik</a></b>
 </p>
 
 <p align="center">
