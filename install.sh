@@ -28,7 +28,7 @@ echo -e "${NC}\n"
 if [ -z "$STY" ]; then
     echo -e "${YELLOW}${BOLD}[!] Not running in a screen session${NC}"
     echo -e "${YELLOW}Creating screen session 'gensyn'...${NC}\n"
-    screen -dmS gensyn bash -c "cd $HOME && bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/main/install.sh)"
+    screen -dmS gensyn bash -c "cd $HOME && bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)"
     screen -r gensyn
     exit 0
 fi

@@ -10,7 +10,7 @@
 ### One-Line Installation
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 ```
 
 That's it! The script will:
@@ -54,7 +54,7 @@ The script automatically:
 
 ```bash
 # One-line install
-bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 ```
 
 ### Step 2: Choose Identity Option
@@ -151,7 +151,7 @@ rm ~/rl-swarm/swarm.pem
 rm ~/rl-swarm/modal-login/temp-data/*.json
 
 # Run installation again
-bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 ```
 
 ### OOM Errors (Out of Memory)?
@@ -175,7 +175,7 @@ screen -r gensyn
 # Press Ctrl+C
 
 # Run installation again (it will backup swarm.pem)
-bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 
 # Choose option 1 to keep your identity
 ```
