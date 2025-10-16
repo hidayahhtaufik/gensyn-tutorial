@@ -1,6 +1,6 @@
 # 🐝 Gensyn RL-SWARM Auto Installer
 
-**Simple, reliable one-command installer for Gensyn RL-SWARM nodes**
+**One powerful command for Gensyn RL-SWARM nodes**
 
 [![Twitter](https://img.shields.io/twitter/follow/Hidayahhtaufik?style=social)](https://twitter.com/Hidayahhtaufik)
 [![GitHub](https://img.shields.io/github/stars/hidayahhtaufik/gensyn-tutorial?style=social)](https://github.com/hidayahhtaufik/gensyn-tutorial)
@@ -16,29 +16,15 @@ bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/
 ## 💪 Features
 
 - ✅ **Auto-install dependencies** - Everything automatically
-- ✅ **Smart identity management** - Keep or start fresh
-- ✅ **Training optimization** - Default or low memory mode
+- ✅ **Smart identity management** - Keep, restore, or start fresh
+- ✅ **Training optimization** - Default, low memory, or custom
 - ✅ **Auto backup script** - Creates ~/backup-swarm.sh
 - ✅ **GPU/CPU detection** - Works on any hardware
-- ✅ **Simple & reliable** - No complex automation
+- ✅ **Proper screen management** - RL-SWARM stays running
 
 ---
 
-## 🖥️ System Requirements
-
-### Minimum (CPU Mode)
-- **RAM**: 32GB
-- **CPU**: arm64 or x86
-- **Python**: >= 3.10
-
-### Recommended (GPU Mode)
-- **GPU**: RTX 3090/4090, A100, H100
-- **RAM**: 24GB+
-- **Python**: >= 3.10
-
----
-
-## 📖 Installation Guide
+## 📖 Complete Installation Guide
 
 ### Step 1: Run the Installer
 
@@ -48,46 +34,87 @@ bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/
 
 The installer will:
 1. Install dependencies
-2. Handle swarm.pem (keep or fresh)
-3. Configure training (default or low memory)
-4. Start rl-swarm
+2. Handle swarm.pem (keep/restore/fresh)
+3. Configure training
+4. Start rl-swarm in screen session
 
-### Step 2: Setup Localtunnel (In NEW Terminal)
+### Step 2: Setup Localtunnel (IMPORTANT!)
 
-**Open a new terminal/tab** and run:
+**The installer will run rl-swarm in screen 'gensyn'**
+
+Now you need to setup localtunnel **in a NEW terminal (outside the screen)**:
+
+#### Open NEW Terminal/Tab
 
 ```bash
-# Get your IPv4 address (this is the password)
+# 1. Get your IPv4 password
 curl -4 ifconfig.me
 # Example output: 46.4.156.234
 
-# Start localtunnel
+# 2. Start localtunnel
 lt --port 3000
 # Example output: https://true-things-cry.loca.lt
 ```
 
-### Step 3: Access and Login
+#### Login in Browser
 
-1. Open the localtunnel URL in browser
+1. Open the localtunnel URL
 2. Enter your IPv4 address as password
 3. Login with email/Google
-4. Done! 🎉
+4. Wait for OTP and complete login
+
+#### Exit Localtunnel
+
+After successful login:
+```bash
+# Press Ctrl+C to stop localtunnel
+# You don't need it running anymore!
+```
+
+### Step 3: Reattach to Screen (If Needed)
+
+If you need to manually configure or check logs:
+
+```bash
+# Reattach to screen
+screen -r gensyn
+
+# View logs
+tail -f logs/swarm.log
+
+# Detach from screen
+# Press: Ctrl+A then D
+```
 
 ---
 
 ## 💾 Backup Your Identity
 
-### Auto Backup
+### Create Backup
+
 ```bash
+# Auto backup script
 ~/backup-swarm.sh
+
+# Manual backup
+mkdir -p ~/backup
+cp ~/rl-swarm/swarm.pem ~/backup/
 ```
 
-### Manual Backup
-```bash
-cp ~/rl-swarm/swarm.pem ~/swarm_backup.pem
-```
+### Restore from Backup
 
-**⚠️ Important:** Always backup `swarm.pem` before updates!
+**When running installer:**
+1. Choose option 2: "Restore from backup folder"
+2. Enter backup folder path (e.g., `~/backup`)
+3. Installer will find swarm.pem inside
+
+**Backup folder structure:**
+```
+~/backup/
+├── swarm.pem              # Required!
+├── userData.json          # Optional
+└── userApiKey.json        # Optional
+```
 
 ---
 
@@ -95,17 +122,18 @@ cp ~/rl-swarm/swarm.pem ~/swarm_backup.pem
 
 ### Dashboard
 - Main: https://dashboard.gensyn.ai
-- Stats: https://gensyn-node.vercel.app
+- Stats: https://gensyn-node.vercel.app (enter your peer ID)
 
 ### Check Logs
 ```bash
-tail -f ~/rl-swarm/logs/swarm.log
-```
-
-### Reattach Screen
-```bash
+# Reattach to screen first
 screen -r gensyn
-# Ctrl+A then D to detach
+
+# View logs
+tail -f ~/rl-swarm/logs/swarm.log
+
+# Detach
+Ctrl+A then D
 ```
 
 ---
@@ -117,15 +145,19 @@ screen -r gensyn
 ~/backup-swarm.sh
 
 # View logs
+screen -r gensyn
 tail -f ~/rl-swarm/logs/swarm.log
 
 # Reattach screen
 screen -r gensyn
 
-# Get IPv4 for localtunnel password
+# Detach from screen
+Ctrl+A then D
+
+# Get IPv4 for localtunnel
 curl -4 ifconfig.me
 
-# Start localtunnel (in separate terminal)
+# Start localtunnel (in separate terminal, OUTSIDE screen)
 lt --port 3000
 
 # Reduce memory usage
@@ -135,54 +167,78 @@ sed -i -E 's/(num_train_samples:\s*)2/\11/' rgym_exp/config/rg-swarm.yaml
 
 ---
 
+## 🎯 Understanding the Flow
+
+### Terminal Management
+
+**Terminal 1 (Screen "gensyn"):**
+- Installer runs here
+- RL-SWARM runs here
+- **Stays running forever!**
+- Access: `screen -r gensyn`
+
+**Terminal 2 (Regular terminal, OUTSIDE screen):**
+- Run localtunnel here
+- Login in browser
+- Exit localtunnel (Ctrl+C) after login
+- Can close this terminal after
+
+**Terminal 1 again (If needed):**
+- Reattach: `screen -r gensyn`
+- Manual config
+- Check logs
+- Detach: `Ctrl+A then D`
+
+---
+
 ## 🆘 Troubleshooting
 
-### OOM (Out of Memory) Error
+### OOM (Out of Memory)
 ```bash
 # Reduce training samples
+screen -r gensyn
 cd ~/rl-swarm
 sed -i -E 's/(num_train_samples:\s*)2/\11/' rgym_exp/config/rg-swarm.yaml
-
-# For MacBook
-export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+# Restart rl-swarm
 ```
 
 ### Localtunnel Password Error
 ```bash
-# Make sure to use IPv4, not IPv6!
-curl -4 ifconfig.me    # Use this! (Example: 46.4.156.234)
-
-# NOT this:
-curl ifconfig.me       # Might return IPv6 (Example: 2a01:4f8:...)
-```
-
-### Localtunnel Not Starting
-```bash
-# Reinstall
-npm uninstall -g localtunnel
-npm install -g localtunnel
-
-# Start
-lt --port 3000
+# MUST use IPv4, not IPv6!
+curl -4 ifconfig.me    # Correct! (46.4.156.234)
+curl ifconfig.me       # Wrong! Might return IPv6
 ```
 
 ### Lost swarm.pem
 ```bash
 # Check backups
-ls ~/gensyn-backup*/
-ls ~/swarm_backup.pem
+ls ~/gensyn-backup-*/
+ls ~/backup/
 
-# Or start fresh and run installer again
+# If lost, run installer and start fresh
 ```
 
 ### Node Not Training
 ```bash
 # Check logs
-tail -50 ~/rl-swarm/logs/swarm.log
+screen -r gensyn
+tail -50 logs/swarm.log
 
 # Restart
-screen -r gensyn
-# Press Ctrl+C, then restart
+Ctrl+C
+./run_rl_swarm.sh
+```
+
+### Screen Session Issues
+```bash
+# List all screens
+screen -ls
+
+# Kill old session
+screen -X -S gensyn quit
+
+# Start fresh
+bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 ```
 
 ---
@@ -190,13 +246,13 @@ screen -r gensyn
 ## 🔄 Update Node
 
 ```bash
-# Backup first!
+# 1. Backup first!
 ~/backup-swarm.sh
 
-# Run installer again
+# 2. Run installer again
 bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 
-# Choose: Keep existing identity
+# 3. Choose: Keep existing OR restore from backup
 ```
 
 ---
@@ -215,41 +271,61 @@ bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/
 
 ## 💡 Pro Tips
 
-### Running Multiple Terminals
-
-**Terminal 1 (rl-swarm):**
-```bash
-screen -r gensyn
-# rl-swarm runs here
-```
-
-**Terminal 2 (localtunnel):**
-```bash
-lt --port 3000
-# Get URL and password
-```
-
 ### Multiple Nodes
-- Use same email = linked to same wallet
+- Use same email = same wallet
 - Different swarm.pem = different peer IDs
-- All rewards go to same wallet
+- All rewards → same wallet
 
 ### Backup Schedule
 ```bash
-# Add to cron for daily backup
+# Daily backup (add to crontab)
 0 0 * * * ~/backup-swarm.sh
 ```
+
+### Quick Reattach
+```bash
+# Add alias to ~/.bashrc
+alias gensyn='screen -r gensyn'
+
+# Then just type:
+gensyn
+```
+
+### Manual Configuration
+After login, you can manually configure:
+```bash
+screen -r gensyn
+cd ~/rl-swarm
+nano rgym_exp/config/rg-swarm.yaml
+# Edit settings
+# Ctrl+X, Y, Enter to save
+# Restart rl-swarm
+```
+
+---
+
+## 🖥️ System Requirements
+
+### Minimum (CPU)
+- **RAM**: 32GB
+- **CPU**: arm64 or x86
+- **Python**: >= 3.10
+
+### Recommended (GPU)
+- **GPU**: RTX 3090/4090, A100, H100
+- **RAM**: 24GB+
+- **Python**: >= 3.10
 
 ---
 
 ## 🤝 Contributing
 
-Found a bug? Have an improvement?
+Found a bug? Improvement?
 
-1. Fork this repo
+1. Fork repo
 2. Create feature branch
 3. Commit changes
-4. Push to branch
+4. Push
 5. Open Pull Request
 
 ---
@@ -264,13 +340,13 @@ Found a bug? Have an improvement?
 
 ## ⚠️ Disclaimer
 
-This is experimental testnet software. Provided "as-is" for users interested in helping develop the Gensyn Protocol.
+Experimental testnet software. Use at your own risk.
 
 ---
 
 ## 📜 License
 
-MIT License - Free to use, modify, and distribute!
+MIT License
 
 ---
 

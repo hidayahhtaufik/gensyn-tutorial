@@ -2,58 +2,101 @@
 
 ## 📥 Installation
 
-### Basic Installer
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 ```
 
-### Enhanced Installer (Recommended)
+---
+
+## 🔄 The Proper Flow
+
+### Terminal 1: Screen Session
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install-enhanced.sh)
+# Run installer (creates screen "gensyn")
+bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
+
+# Detach from screen
+Ctrl+A then D
+
+# Reattach to screen
+screen -r gensyn
+
+# Kill screen session
+screen -X -S gensyn quit
+```
+
+### Terminal 2: Localtunnel (OUTSIDE Screen)
+```bash
+# Get IPv4 password
+curl -4 ifconfig.me
+
+# Start localtunnel
+lt --port 3000
+
+# Exit localtunnel (after login)
+Ctrl+C
 ```
 
 ---
 
-## 💾 Backup Commands
+## 💾 Backup & Restore
 
 ### Create Backup
 ```bash
+# Auto backup
 ~/backup-swarm.sh
-```
 
-### Manual Backup
-```bash
-cp ~/rl-swarm/swarm.pem ~/swarm_backup.pem
-cp ~/rl-swarm/modal-login/temp-data/*.json ~/
+# Manual backup
+mkdir -p ~/backup
+cp ~/rl-swarm/swarm.pem ~/backup/
+cp ~/rl-swarm/modal-login/temp-data/*.json ~/backup/
 ```
 
 ### Restore Backup
 ```bash
-# During install, choose option 2
-# Or manually:
-cp ~/swarm_backup.pem ~/rl-swarm/swarm.pem
+# During installer:
+# Choose option 2: "Restore from backup folder"
+# Enter: ~/backup
+
+# Or manual restore:
+cp ~/backup/swarm.pem ~/rl-swarm/
 ```
 
 ---
 
 ## 📊 Monitoring
 
-### View Logs (Live)
+### View Logs
 ```bash
+# Reattach to screen first
+screen -r gensyn
+
+# View logs
 tail -f ~/rl-swarm/logs/swarm.log
+
+# Last 50 lines
+tail -50 ~/rl-swarm/logs/swarm.log
+
+# Detach
+Ctrl+A then D
 ```
 
-### Check Screen Session
+### Dashboard
 ```bash
-screen -ls                  # List all sessions
-screen -r gensyn           # Reattach to gensyn
-# Ctrl+A then D to detach
+# Main dashboard
+https://dashboard.gensyn.ai
+
+# Node stats (enter your peer ID)
+https://gensyn-node.vercel.app
 ```
 
-### Check Dashboard
+### Check Screen Sessions
 ```bash
-# Visit: https://dashboard.gensyn.ai
-# Or: https://gensyn-node.vercel.app
+# List all screens
+screen -ls
+
+# Check if gensyn is running
+screen -ls | grep gensyn
 ```
 
 ---
@@ -62,44 +105,108 @@ screen -r gensyn           # Reattach to gensyn
 
 ### Edit Training Config
 ```bash
-nano ~/rl-swarm/rgym_exp/config/rg-swarm.yaml
+# Reattach to screen
+screen -r gensyn
+
+# Edit config
+cd ~/rl-swarm
+nano rgym_exp/config/rg-swarm.yaml
+
+# Save: Ctrl+X, Y, Enter
+# Restart rl-swarm if needed
 ```
 
 ### Reduce Memory Usage
 ```bash
+# Inside screen
 cd ~/rl-swarm
 sed -i -E 's/(num_train_samples:\s*)2/\11/' rgym_exp/config/rg-swarm.yaml
+
+# Restart
+./run_rl_swarm.sh
 ```
 
-### Check Current Config
+### View Current Config
 ```bash
 cat ~/rl-swarm/rgym_exp/config/rg-swarm.yaml | grep num_train_samples
 ```
 
 ---
 
-## 🚀 Start/Stop
+## 🚀 Start/Stop/Restart
 
-### Start Node
+### Start (First Time)
 ```bash
+# Run installer
+bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
+```
+
+### Restart RL-SWARM
+```bash
+# Reattach to screen
+screen -r gensyn
+
+# Stop current
+Ctrl+C
+
+# Restart
 cd ~/rl-swarm
-source .venv/bin/activate
+. .venv/bin/activate
 ./run_rl_swarm.sh
+
+# Detach
+Ctrl+A then D
 ```
 
 ### Stop Node
 ```bash
-# Inside screen session
-Ctrl + C
+# Reattach to screen
+screen -r gensyn
 
-# Or kill screen
+# Stop
+Ctrl+C
+
+# Kill screen
 screen -X -S gensyn quit
 ```
 
-### Restart Node
+---
+
+## 🌐 Network/Localtunnel
+
+### Get IPv4 Password
 ```bash
-screen -X -S gensyn quit
-screen -dmS gensyn bash -c "cd ~/rl-swarm && source .venv/bin/activate && ./run_rl_swarm.sh"
+# Method 1 (recommended)
+curl -4 ifconfig.me
+
+# Method 2
+curl -4 ipinfo.io/ip
+
+# Method 3
+ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v 127.0.0.1
+```
+
+### Start Localtunnel (NEW Terminal, OUTSIDE Screen)
+```bash
+# Start
+lt --port 3000
+
+# Stop (after login)
+Ctrl+C
+
+# Reinstall if needed
+npm uninstall -g localtunnel
+npm install -g localtunnel
+```
+
+### Alternative: Cloudflared
+```bash
+# Install
+wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared-linux-amd64.deb
+
+# Start (no password needed!)
+cloudflared tunnel --url http://localhost:3000
 ```
 
 ---
@@ -108,47 +215,53 @@ screen -dmS gensyn bash -c "cd ~/rl-swarm && source .venv/bin/activate && ./run_
 
 ### Check if Running
 ```bash
-ps aux | grep rl-swarm
+# Check screen
 screen -ls
+
+# Check process
+ps aux | grep rl-swarm
+ps aux | grep python
+
+# Check port
+netstat -tlnp | grep 3000
+lsof -i:3000
 ```
 
 ### View All Logs
 ```bash
+# Inside screen
+screen -r gensyn
+
+# List logs
 ls ~/rl-swarm/logs/
-tail -n 100 ~/rl-swarm/logs/swarm.log
-tail -n 100 ~/rl-swarm/logs/yarn.log
+
+# View specific log
+tail -f ~/rl-swarm/logs/swarm.log
+tail -f ~/rl-swarm/logs/yarn.log
 ```
 
 ### Check GPU
 ```bash
+# GPU info
 nvidia-smi
-watch -n 1 nvidia-smi  # Live monitoring
+
+# Live monitoring
+watch -n 1 nvidia-smi
+
+# Check CUDA
+nvcc --version
 ```
 
 ### Check Memory
 ```bash
+# RAM usage
 free -h
-htop  # or top
-```
 
----
+# Detailed
+htop
 
-## 🌐 Localtunnel
-
-### Start Localtunnel
-```bash
-lt --port 3000
-```
-
-### Get Password
-```bash
-curl https://loca.lt/mytunnelpassword
-# Or use your server IP
-```
-
-### Check Tunnel Status
-```bash
-ps aux | grep localtunnel
+# Or
+top
 ```
 
 ---
@@ -157,89 +270,164 @@ ps aux | grep localtunnel
 
 ### Important Files
 ```bash
-~/rl-swarm/swarm.pem                              # Your identity
-~/rl-swarm/modal-login/temp-data/userData.json   # User data
-~/rl-swarm/modal-login/temp-data/userApiKey.json # API keys
-~/rl-swarm/logs/swarm.log                        # Training logs
+# Identity (BACKUP THIS!)
+~/rl-swarm/swarm.pem
+
+# User data
+~/rl-swarm/modal-login/temp-data/userData.json
+~/rl-swarm/modal-login/temp-data/userApiKey.json
+
+# Logs
+~/rl-swarm/logs/swarm.log
+~/rl-swarm/logs/yarn.log
+
+# Config
+~/rl-swarm/rgym_exp/config/rg-swarm.yaml
+
+# Backup script
+~/backup-swarm.sh
 ```
 
-### Configuration
+### View Files
 ```bash
-~/rl-swarm/rgym_exp/config/rg-swarm.yaml  # Training config
+# List rl-swarm directory
+ls -la ~/rl-swarm/
+
+# Check if swarm.pem exists
+ls -la ~/rl-swarm/swarm.pem
+
+# View peer ID (from swarm.pem)
+cat ~/rl-swarm/swarm.pem
 ```
 
 ---
 
-## 🔄 Update Node
+## 🔄 Update
 
-### Update to Latest Version
+### Update Node
 ```bash
-# Backup first!
+# 1. Backup first!
 ~/backup-swarm.sh
 
-# Method 1: Use installer
-bash <(curl -s .../install-enhanced.sh)
-# Choose option 1: Use existing
+# 2. Stop current node
+screen -r gensyn
+Ctrl+C
+screen -X -S gensyn quit
 
-# Method 2: Manual
-cd ~/rl-swarm
-git pull origin main
+# 3. Run installer again
+bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
+
+# 4. Choose: Keep existing or restore from backup
+```
+
+### Update Dependencies
+```bash
+# Update npm
+npm update -g
+
+# Update localtunnel
+npm update -g localtunnel
+
+# Update system packages
+sudo apt update && sudo apt upgrade -y
 ```
 
 ---
 
-## 🆘 Troubleshooting
+## 🆘 Emergency Commands
 
-### OOM (Out of Memory) Error
+### OOM Error
 ```bash
-# Reduce training samples
+screen -r gensyn
+Ctrl+C
 cd ~/rl-swarm
-sed -i -E 's/(num_train_samples:\s*)[0-9]+/\11/' rgym_exp/config/rg-swarm.yaml
-
-# For MacBook
-export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+sed -i -E 's/(num_train_samples:\s*)2/\11/' rgym_exp/config/rg-swarm.yaml
+./run_rl_swarm.sh
 ```
 
-### Port 3000 Already in Use
+### Port Already in Use
 ```bash
-# Kill process using port 3000
+# Kill process on port 3000
 lsof -ti:3000 | xargs kill -9
+
+# Or
+fuser -k 3000/tcp
 ```
 
-### Localtunnel Not Working
+### Screen Won't Detach
 ```bash
-# Reinstall
-npm uninstall -g localtunnel
-npm install -g localtunnel
+# Force detach
+Ctrl+A then D then D
 
-# Alternative: Use ngrok or cloudflared
+# Or kill from outside
+screen -X -S gensyn quit
 ```
 
-### Lost swarm.pem
+### Lost in Screen
 ```bash
-# Check backups
-ls ~/gensyn-backup*/
-ls ~/swarm_backup.pem
+# See all windows
+Ctrl+A then "
 
-# If lost, start fresh:
-rm ~/rl-swarm/swarm.pem
-# Run installer again
+# Create new window
+Ctrl+A then C
+
+# Next window
+Ctrl+A then N
+
+# Previous window
+Ctrl+A then P
 ```
 
 ---
 
-## 📱 Screen Session Commands
+## 💡 Pro Tips
+
+### Aliases
+```bash
+# Add to ~/.bashrc
+echo 'alias gensyn="screen -r gensyn"' >> ~/.bashrc
+echo 'alias gensyn-logs="tail -f ~/rl-swarm/logs/swarm.log"' >> ~/.bashrc
+echo 'alias gensyn-backup="~/backup-swarm.sh"' >> ~/.bashrc
+source ~/.bashrc
+
+# Now use:
+gensyn
+gensyn-logs
+gensyn-backup
+```
+
+### Auto-Restart on Crash
+```bash
+# Inside screen
+cd ~/rl-swarm
+. .venv/bin/activate
+while true; do
+    ./run_rl_swarm.sh
+    echo "Restarting in 10 seconds..."
+    sleep 10
+done
+```
+
+### Monitor Multiple Nodes
+```bash
+# List all screens
+screen -ls
+
+# Attach to specific
+screen -r node1
+screen -r node2
+```
+
+---
+
+## 📊 Quick Status Check
 
 ```bash
-screen -S gensyn           # Create session
-screen -r gensyn           # Reattach
-screen -ls                 # List sessions
-screen -X -S gensyn quit   # Kill session
+# One-liner status check
+screen -ls | grep gensyn && echo "✓ Running" || echo "✗ Not running"
 
-# Inside screen:
-Ctrl + A, then D           # Detach
-Ctrl + A, then K           # Kill
-Ctrl + A, then C           # New window
+# With logs
+screen -r gensyn -X hardcopy /tmp/screen.log && tail -5 /tmp/screen.log
 ```
 
 ---
@@ -256,67 +444,32 @@ https://gensyn-testnet.explorer.alchemy.com
 # Node Stats
 https://gensyn-node.vercel.app
 
-# Official Repo
-https://github.com/gensyn-ai/rl-swarm
-
-# Your Tutorial Repo
-https://github.com/hidayahhtaufik/gensyn-tutorial
-
 # Discord
 https://discord.gg/AdnyWNzXh5
+
+# GitHub
+https://github.com/hidayahhtaufik/gensyn-tutorial
 ```
 
 ---
 
-## 💡 Pro Tips
-
-### 1. Auto-restart on Crash
-```bash
-# Create systemd service (advanced)
-# Or use this simple loop:
-while true; do
-    cd ~/rl-swarm
-    source .venv/bin/activate
-    ./run_rl_swarm.sh
-    sleep 10
-done
-```
-
-### 2. Multiple Nodes
-```bash
-# Same email = linked to same wallet
-# Different swarm.pem = different peer IDs
-# All rewards go to same wallet
-```
-
-### 3. Quick Status Check
-```bash
-alias gensyn-status='screen -r gensyn'
-alias gensyn-logs='tail -f ~/rl-swarm/logs/swarm.log'
-alias gensyn-backup='~/backup-swarm.sh'
-
-# Add to ~/.bashrc for persistence
-```
-
----
-
-**Quick Copy-Paste Commands:**
+## 📝 Quick Copy-Paste
 
 ```bash
-# Install Enhanced
-bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install-enhanced.sh)
+# Full setup (one-time)
+bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
+
+# Localtunnel (new terminal)
+curl -4 ifconfig.me && lt --port 3000
+
+# Reattach
+screen -r gensyn
 
 # Backup
 ~/backup-swarm.sh
 
 # Logs
 tail -f ~/rl-swarm/logs/swarm.log
-
-# Reattach
-screen -r gensyn
-
-# Reduce Memory
-cd ~/rl-swarm && sed -i -E 's/(num_train_samples:\s*)2/\11/' rgym_exp/config/rg-swarm.yaml
 ```
 
 ---
