@@ -2,28 +2,25 @@
 
 # Gensyn RL-SWARM Auto Installer
 # By @Hidayahhtaufik
-# One powerful script with all features
+# Simple & Reliable
 
 # Colors
 BOLD="\e[1m"
 RED="\e[31m"
 GREEN="\e[32m"
 YELLOW="\e[33m"
-BLUE="\e[34m"
 CYAN="\e[36m"
 NC="\e[0m"
 
 # Variables
 SWARM_DIR="$HOME/rl-swarm"
 TEMP_DATA_PATH="$SWARM_DIR/modal-login/temp-data"
-HOME_DIR="$HOME"
-LOCALTUNNEL_PORT=3000
 
 # Banner
 clear
 echo -e "${CYAN}${BOLD}"
 echo "╔═══════════════════════════════════════════╗"
-echo "║   Gensyn RL-SWARM Auto Installer v2.0    ║"
+echo "║   Gensyn RL-SWARM Auto Installer v2.1    ║"
 echo "║         By @Hidayahhtaufik               ║"
 echo "╚═══════════════════════════════════════════╝"
 echo -e "${NC}\n"
@@ -39,7 +36,7 @@ fi
 
 # Function to check and install dependencies
 install_dependencies() {
-    echo -e "${CYAN}${BOLD}[1/6] Checking dependencies...${NC}"
+    echo -e "${CYAN}${BOLD}[1/5] Checking dependencies...${NC}"
     
     local deps=("curl" "wget" "git" "python3" "npm")
     local missing_deps=()
@@ -56,6 +53,7 @@ install_dependencies() {
         sudo apt install -y curl wget git python3 python3-venv python3-pip npm build-essential -qq
     fi
     
+    # Install localtunnel
     if ! command -v lt &> /dev/null; then
         echo -e "${YELLOW}Installing localtunnel...${NC}"
         sudo npm install -g localtunnel --silent
@@ -66,195 +64,74 @@ install_dependencies() {
 
 # Function to handle existing swarm.pem
 handle_existing_swarm() {
-    echo -e "${CYAN}${BOLD}[2/6] Identity Management${NC}\n"
-    
-    # Check for existing swarm.pem in multiple locations
-    local found_in_swarm=false
-    local found_backup=""
+    echo -e "${CYAN}${BOLD}[2/5] Identity Management${NC}\n"
     
     if [ -f "$SWARM_DIR/swarm.pem" ]; then
-        found_in_swarm=true
-    fi
-    
-    # Check common backup locations
-    local backup_locations=(
-        "$HOME/swarm_backup.pem"
-        "$HOME/gensyn-backup/swarm.pem"
-        "$HOME/backup/swarm.pem"
-    )
-    
-    for loc in "${backup_locations[@]}"; do
-        if [ -f "$loc" ]; then
-            found_backup="$loc"
-            break
-        fi
-    done
-    
-    # Show options based on what's found
-    if [ "$found_in_swarm" = true ]; then
         echo -e "${YELLOW}[!] Found existing swarm.pem${NC}\n"
         echo -e "${BOLD}Choose:${NC}"
-        echo -e "${GREEN}1)${NC} Keep existing identity (recommended)"
-        echo -e "${BLUE}2)${NC} Restore from backup"
-        echo -e "${RED}3)${NC} Start fresh"
+        echo -e "${GREEN}1)${NC} Keep existing (recommended)"
+        echo -e "${RED}2)${NC} Start fresh"
         
-        read -p $'\e[1mChoice (1/2/3): \e[0m' choice
+        read -p $'\e[1mChoice (1/2): \e[0m' choice
         
-        case $choice in
-            1)
-                echo -e "\n${CYAN}Keeping existing identity...${NC}"
-                [ -f "$SWARM_DIR/swarm.pem" ] && mv "$SWARM_DIR/swarm.pem" "$HOME_DIR/"
-                [ -f "$TEMP_DATA_PATH/userData.json" ] && mv "$TEMP_DATA_PATH/userData.json" "$HOME_DIR/" 2>/dev/null
-                [ -f "$TEMP_DATA_PATH/userApiKey.json" ] && mv "$TEMP_DATA_PATH/userApiKey.json" "$HOME_DIR/" 2>/dev/null
-                rm -rf "$SWARM_DIR"
-                cd $HOME && git clone https://github.com/gensyn-ai/rl-swarm.git -q
-                [ -f "$HOME_DIR/swarm.pem" ] && mv "$HOME_DIR/swarm.pem" "$SWARM_DIR/"
-                [ -f "$HOME_DIR/userData.json" ] && mv "$HOME_DIR/userData.json" "$TEMP_DATA_PATH/" 2>/dev/null
-                [ -f "$HOME_DIR/userApiKey.json" ] && mv "$HOME_DIR/userApiKey.json" "$TEMP_DATA_PATH/" 2>/dev/null
-                echo -e "${GREEN}[✓] Identity restored${NC}\n"
-                ;;
-            2)
-                restore_from_backup
-                ;;
-            3)
-                start_fresh
-                ;;
-            *)
-                echo -e "${RED}Invalid choice, keeping existing${NC}"
-                ;;
-        esac
-    elif [ -n "$found_backup" ]; then
-        echo -e "${GREEN}[✓] Found backup: $found_backup${NC}"
-        read -p $'\e[1mRestore backup? (y/n): \e[0m' restore
-        if [[ "$restore" =~ ^[Yy]$ ]]; then
+        if [ "$choice" == "1" ]; then
+            echo -e "\n${CYAN}Keeping existing identity...${NC}"
+            [ -f "$SWARM_DIR/swarm.pem" ] && mv "$SWARM_DIR/swarm.pem" "$HOME/"
+            [ -f "$TEMP_DATA_PATH/userData.json" ] && mv "$TEMP_DATA_PATH/userData.json" "$HOME/" 2>/dev/null
+            [ -f "$TEMP_DATA_PATH/userApiKey.json" ] && mv "$TEMP_DATA_PATH/userApiKey.json" "$HOME/" 2>/dev/null
             rm -rf "$SWARM_DIR"
             cd $HOME && git clone https://github.com/gensyn-ai/rl-swarm.git -q
-            cp "$found_backup" "$SWARM_DIR/swarm.pem"
-            echo -e "${GREEN}[✓] Backup restored${NC}\n"
+            [ -f "$HOME/swarm.pem" ] && mv "$HOME/swarm.pem" "$SWARM_DIR/"
+            [ -f "$HOME/userData.json" ] && mv "$HOME/userData.json" "$TEMP_DATA_PATH/" 2>/dev/null
+            [ -f "$HOME/userApiKey.json" ] && mv "$HOME/userApiKey.json" "$TEMP_DATA_PATH/" 2>/dev/null
+            echo -e "${GREEN}[✓] Identity restored${NC}\n"
         else
-            start_fresh
+            echo -e "\n${CYAN}Starting fresh...${NC}"
+            rm -rf "$SWARM_DIR"
+            cd $HOME && git clone https://github.com/gensyn-ai/rl-swarm.git -q
+            echo -e "${GREEN}[✓] Fresh install${NC}\n"
         fi
     else
-        start_fresh
-    fi
-}
-
-restore_from_backup() {
-    echo -e "\n${CYAN}Restore from backup...${NC}"
-    read -p $'\e[1mEnter backup path: \e[0m' backup_path
-    if [ -f "$backup_path" ]; then
+        echo -e "${CYAN}No existing identity found${NC}"
+        echo -e "${YELLOW}Starting fresh installation...${NC}"
         rm -rf "$SWARM_DIR"
         cd $HOME && git clone https://github.com/gensyn-ai/rl-swarm.git -q
-        cp "$backup_path" "$SWARM_DIR/swarm.pem"
-        echo -e "${GREEN}[✓] Restored${NC}\n"
-    else
-        echo -e "${RED}File not found!${NC}"
-        start_fresh
+        echo -e "${GREEN}[✓] Fresh install${NC}\n"
     fi
-}
-
-start_fresh() {
-    echo -e "\n${CYAN}Starting fresh...${NC}"
-    rm -rf "$SWARM_DIR"
-    cd $HOME && git clone https://github.com/gensyn-ai/rl-swarm.git -q
-    echo -e "${GREEN}[✓] Fresh install${NC}\n"
 }
 
 # Function to configure training
 configure_training() {
-    echo -e "${CYAN}${BOLD}[3/6] Training Configuration${NC}\n"
+    echo -e "${CYAN}${BOLD}[3/5] Training Configuration${NC}\n"
     
     echo -e "${BOLD}Optimize for:${NC}"
-    echo -e "${GREEN}1)${NC} Default (recommended for GPU)"
-    echo -e "${BLUE}2)${NC} Low memory (for CPU/limited RAM)"
-    echo -e "${YELLOW}3)${NC} Custom"
+    echo -e "${GREEN}1)${NC} Default (recommended)"
+    echo -e "${YELLOW}2)${NC} Low memory (CPU/limited RAM)"
     
-    read -p $'\e[1mChoice (1/2/3) [default: 1]: \e[0m' config_choice
+    read -p $'\e[1mChoice (1/2) [default: 1]: \e[0m' config_choice
     config_choice=${config_choice:-1}
     
     if [ "$config_choice" == "2" ]; then
         echo -e "\n${CYAN}Optimizing for low memory...${NC}"
         if [ -f "$SWARM_DIR/rgym_exp/config/rg-swarm.yaml" ]; then
             sed -i -E 's/(num_train_samples:\s*)2/\11/' "$SWARM_DIR/rgym_exp/config/rg-swarm.yaml"
-            echo -e "${GREEN}[✓] Reduced training samples${NC}"
-            echo -e "${YELLOW}Note: Lower memory usage, may affect speed${NC}\n"
-        fi
-    elif [ "$config_choice" == "3" ]; then
-        echo -e "\n${CYAN}Custom configuration:${NC}"
-        read -p "Training samples (1-2) [default: 2]: " samples
-        samples=${samples:-2}
-        if [ -f "$SWARM_DIR/rgym_exp/config/rg-swarm.yaml" ]; then
-            sed -i -E "s/(num_train_samples:\s*)[0-9]+/\1$samples/" "$SWARM_DIR/rgym_exp/config/rg-swarm.yaml"
-            echo -e "${GREEN}[✓] Set to: $samples${NC}\n"
+            echo -e "${GREEN}[✓] Reduced training samples${NC}\n"
         fi
     else
         echo -e "\n${GREEN}[✓] Using default config${NC}\n"
     fi
 }
 
-# Function to setup localtunnel
-setup_localtunnel() {
-    echo -e "${CYAN}${BOLD}[4/6] Network Setup${NC}\n"
-    
-    echo -e "${BOLD}Enable remote access?${NC}"
-    echo -e "${GREEN}1)${NC} Yes (for VPS/VM)"
-    echo -e "${YELLOW}2)${NC} No (localhost only)"
-    
-    read -p $'\e[1mChoice (1/2) [default: 1]: \e[0m' tunnel_choice
-    tunnel_choice=${tunnel_choice:-1}
-    
-    if [ "$tunnel_choice" == "1" ]; then
-        lt --port $LOCALTUNNEL_PORT > /tmp/localtunnel.log 2>&1 &
-        TUNNEL_PID=$!
-        sleep 5
-        
-        TUNNEL_URL=$(grep -o 'https://[^ ]*\.loca\.lt' /tmp/localtunnel.log | head -1)
-        
-        if [ -n "$TUNNEL_URL" ]; then
-            echo -e "${GREEN}[✓] Remote access enabled${NC}"
-            echo -e "${BOLD}URL: ${GREEN}$TUNNEL_URL${NC}"
-            
-            # Get IPv4 address (not IPv6)
-            PASSWORD=""
-            
-            # Method 1: Force IPv4 with ifconfig.me
-            PASSWORD=$(curl -4 -s ifconfig.me 2>/dev/null)
-            
-            # Method 2: Force IPv4 with ipinfo.io
-            [ -z "$PASSWORD" ] && PASSWORD=$(curl -4 -s ipinfo.io/ip 2>/dev/null)
-            
-            # Method 3: Use ip command to get IPv4
-            [ -z "$PASSWORD" ] && PASSWORD=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v 127.0.0.1 | head -1)
-            
-            # Method 4: Try loca.lt endpoint
-            [ -z "$PASSWORD" ] && PASSWORD=$(curl -s https://loca.lt/mytunnelpassword 2>/dev/null)
-            
-            echo -e "${BOLD}Password (IPv4): ${YELLOW}$PASSWORD${NC}"
-            
-            # Show alternative methods if needed
-            echo -e "${CYAN}If password doesn't work, try:${NC}"
-            echo -e "${CYAN}  curl -4 ifconfig.me${NC}\n"
-            
-            echo "$TUNNEL_URL" > /tmp/tunnel_url.txt
-            echo "$PASSWORD" > /tmp/tunnel_pass.txt
-        else
-            echo -e "${YELLOW}[!] Using localhost:3000${NC}\n"
-        fi
-    else
-        echo -e "${GREEN}[✓] Localhost only${NC}\n"
-    fi
-}
-
 # Function to check GPU
 check_gpu() {
-    echo -e "${CYAN}${BOLD}[5/6] Hardware Detection${NC}"
+    echo -e "${CYAN}${BOLD}[4/5] Hardware Detection${NC}"
     
     if command -v nvidia-smi &> /dev/null; then
         echo -e "${GREEN}[✓] GPU detected${NC}"
-        nvidia-smi --query-gpu=name,memory.total --format=csv,noheader | head -1
+        nvidia-smi --query-gpu=name --format=csv,noheader | head -1
         echo ""
     else
-        echo -e "${YELLOW}[!] CPU mode (training will be slower)${NC}\n"
+        echo -e "${YELLOW}[!] CPU mode${NC}\n"
     fi
 }
 
@@ -274,7 +151,7 @@ EOF
 
 # Function to start RL-SWARM
 start_swarm() {
-    echo -e "${CYAN}${BOLD}[6/6] Starting RL-SWARM${NC}\n"
+    echo -e "${CYAN}${BOLD}[5/5] Starting RL-SWARM${NC}\n"
     
     cd "$SWARM_DIR" || exit 1
     
@@ -283,27 +160,31 @@ start_swarm() {
     
     create_backup_script
     
-    echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${BOLD}${GREEN}✓ Setup Complete!${NC}"
-    echo -e "${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
     
-    # Show access info
-    if [ -f /tmp/tunnel_url.txt ]; then
-        echo -e "${BOLD}Access:${NC} $(cat /tmp/tunnel_url.txt)"
-        echo -e "${BOLD}Password:${NC} $(cat /tmp/tunnel_pass.txt)"
-    else
-        echo -e "${BOLD}Access:${NC} http://localhost:3000"
-    fi
+    echo -e "${BOLD}${CYAN}Next Steps:${NC}"
+    echo -e "${BOLD}1. This terminal will start rl-swarm${NC}"
+    echo -e "${BOLD}2. Open a NEW terminal/tab for localtunnel${NC}\n"
     
-    echo -e "\n${BOLD}Quick Commands:${NC}"
+    echo -e "${YELLOW}Commands for the NEW terminal:${NC}"
+    echo -e "${GREEN}# Get your IPv4 password${NC}"
+    echo -e "curl -4 ifconfig.me"
+    echo -e ""
+    echo -e "${GREEN}# Start localtunnel${NC}"
+    echo -e "lt --port 3000"
+    echo -e ""
+    echo -e "${GREEN}# Then access the URL with IPv4 as password${NC}\n"
+    
+    echo -e "${BOLD}Quick Commands:${NC}"
     echo -e "  ${CYAN}Backup:${NC} ~/backup-swarm.sh"
     echo -e "  ${CYAN}Logs:${NC} tail -f ~/rl-swarm/logs/swarm.log"
-    echo -e "  ${CYAN}Dashboard:${NC} https://dashboard.gensyn.ai"
     echo -e "  ${CYAN}Detach:${NC} Ctrl+A then D"
     
-    echo -e "\n${BOLD}${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+    echo -e "\n${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
     
-    read -p $'\e[1mPress ENTER to start training...\e[0m'
+    read -p $'\e[1mPress ENTER to start rl-swarm...\e[0m'
     
     ./run_rl_swarm.sh
 }
@@ -313,7 +194,6 @@ main() {
     install_dependencies
     handle_existing_swarm
     configure_training
-    setup_localtunnel
     check_gpu
     start_swarm
 }

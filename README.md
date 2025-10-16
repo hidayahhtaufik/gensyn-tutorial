@@ -1,6 +1,6 @@
 # 🐝 Gensyn RL-SWARM Auto Installer
 
-**One powerful command to run Gensyn RL-SWARM nodes**
+**Simple, reliable one-command installer for Gensyn RL-SWARM nodes**
 
 [![Twitter](https://img.shields.io/twitter/follow/Hidayahhtaufik?style=social)](https://twitter.com/Hidayahhtaufik)
 [![GitHub](https://img.shields.io/github/stars/hidayahhtaufik/gensyn-tutorial?style=social)](https://github.com/hidayahhtaufik/gensyn-tutorial)
@@ -11,18 +11,16 @@
 bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 ```
 
-**That's it!** The installer handles everything automatically.
-
 ---
 
 ## 💪 Features
 
-- ✅ **Auto-install dependencies** - Everything you need, automatically
-- ✅ **Smart identity management** - Keep, restore, or create new
-- ✅ **Training optimization** - Default, low memory, or custom
+- ✅ **Auto-install dependencies** - Everything automatically
+- ✅ **Smart identity management** - Keep or start fresh
+- ✅ **Training optimization** - Default or low memory mode
 - ✅ **Auto backup script** - Creates ~/backup-swarm.sh
-- ✅ **Remote access** - Optional localtunnel for VPS/VM
 - ✅ **GPU/CPU detection** - Works on any hardware
+- ✅ **Simple & reliable** - No complex automation
 
 ---
 
@@ -42,37 +40,36 @@ bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/
 
 ## 📖 Installation Guide
 
-### 1. Run the Installer
+### Step 1: Run the Installer
 
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/master/install.sh)
 ```
 
-### 2. Choose Your Options
+The installer will:
+1. Install dependencies
+2. Handle swarm.pem (keep or fresh)
+3. Configure training (default or low memory)
+4. Start rl-swarm
 
-**Identity:**
-- Keep existing (if found)
-- Restore from backup
-- Start fresh
+### Step 2: Setup Localtunnel (In NEW Terminal)
 
-**Training:**
-- Default (for GPU)
-- Low memory (for CPU)
-- Custom
+**Open a new terminal/tab** and run:
 
-**Network:**
-- Remote access (VPS/VM)
-- Localhost only
+```bash
+# Get your IPv4 address (this is the password)
+curl -4 ifconfig.me
+# Example output: 46.4.156.234
 
-### 3. Login and Start
-
-```
-Access: https://xxxx.loca.lt
-Password: shown-in-terminal
+# Start localtunnel
+lt --port 3000
+# Example output: https://true-things-cry.loca.lt
 ```
 
-1. Open URL
-2. Enter password
+### Step 3: Access and Login
+
+1. Open the localtunnel URL in browser
+2. Enter your IPv4 address as password
 3. Login with email/Google
 4. Done! 🎉
 
@@ -125,8 +122,11 @@ tail -f ~/rl-swarm/logs/swarm.log
 # Reattach screen
 screen -r gensyn
 
-# Check GPU
-nvidia-smi
+# Get IPv4 for localtunnel password
+curl -4 ifconfig.me
+
+# Start localtunnel (in separate terminal)
+lt --port 3000
 
 # Reduce memory usage
 cd ~/rl-swarm
@@ -147,30 +147,31 @@ sed -i -E 's/(num_train_samples:\s*)2/\11/' rgym_exp/config/rg-swarm.yaml
 export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
 ```
 
-### Localtunnel Not Working
+### Localtunnel Password Error
+```bash
+# Make sure to use IPv4, not IPv6!
+curl -4 ifconfig.me    # Use this! (Example: 46.4.156.234)
+
+# NOT this:
+curl ifconfig.me       # Might return IPv6 (Example: 2a01:4f8:...)
+```
+
+### Localtunnel Not Starting
 ```bash
 # Reinstall
 npm uninstall -g localtunnel
 npm install -g localtunnel
+
+# Start
 lt --port 3000
-```
-
-**Localtunnel Password Error:**
-```bash
-# Get IPv4 address (NOT IPv6!)
-curl -4 ifconfig.me
-
-# Or use this
-curl -4 ipinfo.io/ip
-
-# Use the IPv4 address as password
-# Example: 46.4.156.234 (NOT 2a01:4f8:...)
 ```
 
 ### Lost swarm.pem
 ```bash
 # Check backups
 ls ~/gensyn-backup*/
+ls ~/swarm_backup.pem
+
 # Or start fresh and run installer again
 ```
 
@@ -207,16 +208,37 @@ bash <(curl -s https://raw.githubusercontent.com/hidayahhtaufik/gensyn-tutorial/
 ~/rl-swarm/modal-login/temp-data/*.json        # User data
 ~/rl-swarm/logs/swarm.log                      # Training logs
 ~/rl-swarm/rgym_exp/config/rg-swarm.yaml       # Configuration
+~/backup-swarm.sh                              # Auto-created backup script
 ```
 
 ---
 
 ## 💡 Pro Tips
 
-1. **Multiple Nodes**: Use same email = linked to same wallet
-2. **Backup Often**: Run `~/backup-swarm.sh` regularly
-3. **Check Dashboard Daily**: Track progress and rewards
-4. **Join Discord**: https://discord.gg/AdnyWNzXh5
+### Running Multiple Terminals
+
+**Terminal 1 (rl-swarm):**
+```bash
+screen -r gensyn
+# rl-swarm runs here
+```
+
+**Terminal 2 (localtunnel):**
+```bash
+lt --port 3000
+# Get URL and password
+```
+
+### Multiple Nodes
+- Use same email = linked to same wallet
+- Different swarm.pem = different peer IDs
+- All rewards go to same wallet
+
+### Backup Schedule
+```bash
+# Add to cron for daily backup
+0 0 * * * ~/backup-swarm.sh
+```
 
 ---
 
