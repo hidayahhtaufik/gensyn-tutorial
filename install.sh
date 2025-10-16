@@ -39,70 +39,156 @@ if [ ${#missing[@]} -gt 0 ]; then
     sudo apt install -y curl wget git python3 python3-venv python3-pip npm build-essential screen -qq 2>&1 | grep -v "debconf"
 fi
 
+# Check Node.js version
+echo -e "${CYAN}Checking Node.js version...${NC}"
+if command -v node &>/dev/null; then
+    NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
+    if [ "$NODE_VERSION" -lt 14 ]; then
+        echo -e "${YELLOW}Node.js v$NODE_VERSION is too old (need >= v14)${NC}"
+        echo -e "${CYAN}Installing NVM and latest Node.js...${NC}"
+        
+        # Install NVM
+        export NVM_DIR="$HOME/.nvm"
+        if [ ! -d "$NVM_DIR" ]; then
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh 2>/dev/null | bash
+        fi
+        
+        # Load NVM
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+        
+        # Install latest Node.js
+        nvm install node
+        nvm use node
+        
+        echo -e "${GREEN}[✓] Node.js updated: $(node -v)${NC}"
+    else
+        echo -e "${GREEN}[✓] Node.js version OK: $(node -v)${NC}"
+    fi
+else
+    echo -e "${YELLOW}Node.js not found, installing via NVM...${NC}"
+    
+    # Install NVM
+    export NVM_DIR="$HOME/.nvm"
+    if [ ! -d "$NVM_DIR" ]; then
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh 2>/dev/null | bash
+    fi
+    
+    # Load NVM
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    
+    # Install latest Node.js
+    nvm install node
+    nvm use node
+    
+    echo -e "${GREEN}[✓] Node.js installed: $(node -v)${NC}"
+fi
+
+# Install/update localtunnel
 if ! command -v lt &>/dev/null; then
     echo -e "${YELLOW}Installing localtunnel...${NC}"
-    sudo npm install -g localtunnel --silent 2>&1 | grep -v "npm WARN"
+    npm install -g localtunnel --silent 2>&1 | grep -v "npm WARN"
+else
+    echo -e "${GREEN}[✓] localtunnel OK${NC}"
 fi
+
 echo -e "${GREEN}[✓] Dependencies ready${NC}\n"
 
 # Step 2: Identity Management
 echo -e "${CYAN}${BOLD}[2/5] Identity Management${NC}\n"
-if [ -f "$SWARM_DIR/swarm.pem" ]; then
-    echo -e "${YELLOW}[!] Existing installation found${NC}\n"
-    echo -e "${BOLD}Options:${NC}"
-    echo -e "${GREEN}1)${NC} Keep existing identity"
-    echo -e "${BLUE}2)${NC} Restore from backup folder"
-    echo -e "${RED}3)${NC} Start fresh"
-    read -p $'\e[1m\nChoice [1/2/3]: \e[0m' choice
-    
-    case $choice in
-        2)
-            echo -e "\n${CYAN}Enter backup folder path (e.g., ~/backup):${NC}"
-            read -p "Path: " backup_folder
+
+# Check if folder exists first
+if [ -d "$SWARM_DIR" ]; then
+    if [ -f "$SWARM_DIR/swarm.pem" ]; then
+        # Has swarm.pem
+        echo -e "${YELLOW}[!] Existing installation with identity found${NC}\n"
+        echo -e "${BOLD}Options:${NC}"
+        echo -e "${GREEN}1)${NC} Keep existing identity"
+        echo -e "${BLUE}2)${NC} Restore from backup folder"
+        echo -e "${RED}3)${NC} Start fresh (new identity)"
+        read -p $'\e[1m\nChoice [1/2/3]: \e[0m' choice
+        
+        case $choice in
+            2)
+                echo -e "\n${CYAN}Restore from backup${NC}"
+                echo -e "${YELLOW}Prepare: mkdir -p ~/backup && put swarm.pem inside${NC}"
+                read -p "Backup folder path: " backup_folder
+                backup_folder="${backup_folder/#\~/$HOME}"
+                if [ -f "$backup_folder/swarm.pem" ]; then
+                    cp "$backup_folder/swarm.pem" "$SWARM_DIR/"
+                    [ -f "$backup_folder/userData.json" ] && cp "$backup_folder/userData.json" "$SWARM_DIR/modal-login/temp-data/" 2>/dev/null
+                    echo -e "${GREEN}[✓] Restored from backup${NC}"
+                else
+                    echo -e "${RED}swarm.pem not found in: $backup_folder${NC}"
+                    echo -e "${YELLOW}Keeping current installation...${NC}"
+                fi
+                ;;
+            3)
+                echo -e "\n${CYAN}Starting fresh (removing old identity)...${NC}"
+                rm -f "$SWARM_DIR/swarm.pem"
+                rm -rf "$SWARM_DIR/modal-login/temp-data" 2>/dev/null
+                mkdir -p "$SWARM_DIR/modal-login/temp-data"
+                echo -e "${GREEN}[✓] Will create new identity${NC}"
+                ;;
+            *)
+                echo -e "\n${GREEN}[✓] Keeping existing identity${NC}"
+                ;;
+        esac
+    else
+        # Folder exists but no swarm.pem
+        echo -e "${YELLOW}[!] Folder exists but no identity found${NC}\n"
+        echo -e "${BOLD}Have a backup?${NC}"
+        echo -e "${GREEN}1)${NC} Yes, restore from backup"
+        echo -e "${YELLOW}2)${NC} No, create new identity"
+        read -p $'\e[1m\nChoice [1/2]: \e[0m' backup_choice
+        
+        if [ "$backup_choice" == "1" ]; then
+            echo -e "\n${CYAN}Restore from backup${NC}"
+            echo -e "${YELLOW}Prepare: mkdir -p ~/backup && put swarm.pem inside${NC}"
+            read -p "Backup folder path: " backup_folder
             backup_folder="${backup_folder/#\~/$HOME}"
             if [ -f "$backup_folder/swarm.pem" ]; then
+                mkdir -p "$SWARM_DIR/modal-login/temp-data"
                 cp "$backup_folder/swarm.pem" "$SWARM_DIR/"
-                [ -f "$backup_folder/userData.json" ] && cp "$backup_folder/userData.json" "$SWARM_DIR/modal-login/temp-data/" 2>/dev/null
+                [ -f "$backup_folder/userData.json" ] && cp "$backup_folder/userData.json" "$SWARM_DIR/modal-login/temp-data/"
                 echo -e "${GREEN}[✓] Restored from backup${NC}"
             else
-                echo -e "${RED}swarm.pem not found! Starting fresh...${NC}"
-                rm -rf "$SWARM_DIR"
-                git clone https://github.com/gensyn-ai/rl-swarm.git "$SWARM_DIR" -q
+                echo -e "${RED}swarm.pem not found in: $backup_folder${NC}"
+                echo -e "${YELLOW}Will create new identity...${NC}"
             fi
-            ;;
-        3)
-            echo -e "\n${CYAN}Starting fresh...${NC}"
-            rm -rf "$SWARM_DIR"
-            git clone https://github.com/gensyn-ai/rl-swarm.git "$SWARM_DIR" -q
-            echo -e "${GREEN}[✓] Fresh install${NC}"
-            ;;
-        *)
-            echo -e "\n${GREEN}[✓] Keeping existing${NC}"
-            ;;
-    esac
+        else
+            echo -e "${GREEN}[✓] Will create new identity${NC}"
+        fi
+    fi
 else
-    echo -e "${CYAN}No existing installation${NC}\n"
+    # No folder at all
+    echo -e "${CYAN}No installation found${NC}\n"
     echo -e "${BOLD}Have a backup?${NC}"
-    echo -e "${GREEN}1)${NC} Yes, restore"
+    echo -e "${GREEN}1)${NC} Yes, restore from backup"
     echo -e "${YELLOW}2)${NC} No, start fresh"
     read -p $'\e[1m\nChoice [1/2]: \e[0m' backup_choice
     
+    # Clone repository
+    echo -e "\n${CYAN}Cloning repository...${NC}"
+    git clone https://github.com/gensyn-ai/rl-swarm.git "$SWARM_DIR" -q
+    
     if [ "$backup_choice" == "1" ]; then
-        read -p "Backup folder: " backup_folder
+        echo -e "${CYAN}Restore from backup${NC}"
+        echo -e "${YELLOW}Prepare: mkdir -p ~/backup && put swarm.pem inside${NC}"
+        read -p "Backup folder path: " backup_folder
         backup_folder="${backup_folder/#\~/$HOME}"
         if [ -f "$backup_folder/swarm.pem" ]; then
-            [ ! -d "$SWARM_DIR" ] && git clone https://github.com/gensyn-ai/rl-swarm.git "$SWARM_DIR" -q
             mkdir -p "$SWARM_DIR/modal-login/temp-data"
             cp "$backup_folder/swarm.pem" "$SWARM_DIR/"
             [ -f "$backup_folder/userData.json" ] && cp "$backup_folder/userData.json" "$SWARM_DIR/modal-login/temp-data/"
-            echo -e "${GREEN}[✓] Restored${NC}"
+            echo -e "${GREEN}[✓] Restored from backup${NC}"
         else
-            echo -e "${RED}Not found! Starting fresh...${NC}"
-            git clone https://github.com/gensyn-ai/rl-swarm.git "$SWARM_DIR" -q
+            echo -e "${RED}swarm.pem not found in: $backup_folder${NC}"
+            echo -e "${YELLOW}Will create new identity...${NC}"
         fi
     else
-        git clone https://github.com/gensyn-ai/rl-swarm.git "$SWARM_DIR" -q
-        echo -e "${GREEN}[✓] Fresh install${NC}"
+        echo -e "${GREEN}[✓] Will create new identity${NC}"
     fi
 fi
 echo ""
@@ -157,6 +243,12 @@ sleep 1
 echo -e "${YELLOW}Starting screen 'gensyn'...${NC}"
 cat > /tmp/gensyn_start.sh << 'SCRIPT'
 #!/bin/bash
+# Load NVM if exists
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# Start RL-SWARM
 cd ~/rl-swarm
 source .venv/bin/activate
 ./run_rl_swarm.sh
@@ -171,6 +263,9 @@ if ! screen -ls | grep -q "gensyn"; then
     echo -e "${YELLOW}Trying alternative method...${NC}"
     screen -dmS gensyn bash
     sleep 1
+    screen -S gensyn -X stuff 'export NVM_DIR="$HOME/.nvm"'$'\n'
+    screen -S gensyn -X stuff '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'$'\n'
+    sleep 0.5
     screen -S gensyn -X stuff "cd $SWARM_DIR"$'\n'
     sleep 0.5
     screen -S gensyn -X stuff "source .venv/bin/activate"$'\n'

@@ -132,6 +132,37 @@ curl -4 ifconfig.me
 
 ## 🆘 Troubleshooting
 
+### Node.js Version Error
+
+```bash
+# Error: "Expected version >=14. Got 12.x.x"
+# This happens if you have old Node.js from apt
+
+# Quick Fix (if already in screen):
+screen -r gensyn
+Ctrl+C  # Stop current run
+
+# Load NVM
+export NVM_DIR="$HOME/.nvm"
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Install latest Node.js
+nvm install node
+nvm use node
+node -v  # Should be v18+
+
+# Restart RL-SWARM
+cd ~/rl-swarm
+source .venv/bin/activate
+./run_rl_swarm.sh
+
+# OR just rerun installer (easier):
+Ctrl+C  # Exit screen
+screen -S gensyn -X quit  # Kill screen
+bash install.sh  # Rerun (will auto-fix Node.js)
+```
+
 ### Screen Won't Create
 
 ```bash
@@ -317,12 +348,14 @@ sed -i -E 's/(num_train_samples:\s*)2/\11/' rgym_exp/config/rg-swarm.yaml
 - 32GB RAM
 - 50GB disk space
 - Internet connection
+- Node.js >= v14 (auto-installed by script)
 
 ### Recommended
 - GPU (RTX 3090/4090, A100, H100)
 - 64GB RAM
 - 100GB SSD
 - Stable connection
+- Node.js v18+ (auto-installed by script)
 
 ---
 

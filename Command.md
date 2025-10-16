@@ -143,6 +143,16 @@ sed -i -E 's/(num_train_samples:\s*)1/\12/' ~/rl-swarm/rgym_exp/config/rg-swarm.
 ## 🔍 Debugging
 
 ```bash
+# Check Node.js version (need >= v14)
+node -v
+
+# Update Node.js if too old
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm install node
+nvm use node
+
 # Check if files exist
 ls -la ~/rl-swarm/swarm.pem
 ls -la ~/rl-swarm/run_rl_swarm.sh
