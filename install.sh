@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Gensyn RL-SWARM Auto Installer v3.0
+# Gensyn RL-SWARM Auto Installer v3.1
 # By @Hidayahhtaufik
-# Fixed flow with proper screen and localtunnel handling
+# Fixed screen session creation
 
 # Colors
 BOLD="\e[1m"
@@ -23,7 +23,7 @@ show_banner() {
     clear
     echo -e "${CYAN}${BOLD}"
     echo "╔═══════════════════════════════════════════╗"
-    echo "║   Gensyn RL-SWARM Auto Installer v3.0    ║"
+    echo "║   Gensyn RL-SWARM Auto Installer v3.1    ║"
     echo "║         By @Hidayahhtaufik               ║"
     echo "╚═══════════════════════════════════════════╝"
     echo -e "${NC}\n"
@@ -222,49 +222,85 @@ setup_swarm() {
     
     # Kill existing screen session if exists
     screen -S gensyn -X quit 2>/dev/null
-    
-    # Create setup script for screen
-    cat > "$SWARM_DIR/start_in_screen.sh" << 'SCREEN_EOF'
-#!/bin/bash
-cd "$HOME/rl-swarm"
-python3 -m venv .venv
-source .venv/bin/activate
-./run_rl_swarm.sh
-SCREEN_EOF
-    
-    chmod +x "$SWARM_DIR/start_in_screen.sh"
+    sleep 1
     
     create_backup_script
     
     echo -e "${YELLOW}Starting RL-SWARM in screen session 'gensyn'...${NC}"
     echo -e "${CYAN}Please wait...${NC}\n"
     
-    # Start screen session with rl-swarm
-    screen -dmS gensyn bash -c "$SWARM_DIR/start_in_screen.sh"
+    # Change to swarm directory
+    cd "$SWARM_DIR" || exit 1
     
-    sleep 3
+    # Create virtual environment if not exists
+    if [ ! -d ".venv" ]; then
+        echo -e "${CYAN}Creating Python virtual environment...${NC}"
+        python3 -m venv .venv
+    fi
     
-    # Wait for port 3000 message
-    echo -e "${CYAN}Waiting for RL-SWARM to initialize...${NC}"
+    # Start screen session with inline command
+    screen -dmS gensyn bash -c "cd $SWARM_DIR && source .venv/bin/activate && ./run_rl_swarm.sh"
     
-    local max_wait=60
-    local waited=0
-    while [ $waited -lt $max_wait ]; do
-        if screen -S gensyn -X hardcopy /tmp/screen_check.txt 2>/dev/null; then
-            if grep -q "port 3000\|localhost:3000" /tmp/screen_check.txt 2>/dev/null; then
-                echo -e "${GREEN}[✓] RL-SWARM is running in screen 'gensyn'${NC}\n"
-                rm -f /tmp/screen_check.txt
-                break
+    sleep 2
+    
+    # Verify screen was created
+    if ! screen -ls | grep -q "gensyn"; then
+        echo -e "${RED}[✗] Failed to create screen session${NC}"
+        echo -e "${YELLOW}Trying alternative method...${NC}\n"
+        
+        # Alternative method: use screen directly
+        cd "$SWARM_DIR"
+        screen -dmS gensyn
+        sleep 1
+        screen -S gensyn -X stuff "cd $SWARM_DIR
+"
+        screen -S gensyn -X stuff "source .venv/bin/activate
+"
+        screen -S gensyn -X stuff "./run_rl_swarm.sh
+"
+        
+        sleep 3
+    fi
+    
+    # Final verification
+    if screen -ls | grep -q "gensyn"; then
+        echo -e "${GREEN}[✓] Screen session 'gensyn' created successfully${NC}\n"
+        
+        # Wait for port 3000 message
+        echo -e "${CYAN}Waiting for RL-SWARM to initialize...${NC}"
+        
+        local max_wait=60
+        local waited=0
+        while [ $waited -lt $max_wait ]; do
+            if screen -S gensyn -X hardcopy /tmp/screen_check.txt 2>/dev/null; then
+                if grep -q "port 3000\|localhost:3000" /tmp/screen_check.txt 2>/dev/null; then
+                    echo -e "${GREEN}[✓] RL-SWARM is running!${NC}\n"
+                    rm -f /tmp/screen_check.txt
+                    break
+                fi
             fi
+            sleep 2
+            waited=$((waited + 2))
+            echo -ne "${YELLOW}Initializing... ${waited}s${NC}\r"
+        done
+        
+        if [ $waited -ge $max_wait ]; then
+            echo -e "\n${YELLOW}[!] Timeout waiting for port 3000${NC}"
+            echo -e "${CYAN}RL-SWARM may still be starting...${NC}\n"
         fi
-        sleep 2
-        waited=$((waited + 2))
-        echo -ne "${YELLOW}Initializing... ${waited}s${NC}\r"
-    done
-    
-    echo -e "\n${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BOLD}${GREEN}✓ RL-SWARM is running in background (screen: gensyn)${NC}"
-    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+        
+        echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${BOLD}${GREEN}✓ RL-SWARM is running in screen 'gensyn'${NC}"
+        echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+    else
+        echo -e "${RED}[✗] Failed to create screen session${NC}"
+        echo -e "${YELLOW}Please try running manually:${NC}"
+        echo -e "${GREEN}cd $SWARM_DIR${NC}"
+        echo -e "${GREEN}screen -S gensyn${NC}"
+        echo -e "${GREEN}source .venv/bin/activate${NC}"
+        echo -e "${GREEN}./run_rl_swarm.sh${NC}\n"
+        exit 1
+    fi
 }
 
 # Function to start localtunnel
@@ -284,7 +320,7 @@ start_localtunnel() {
     echo -e "${YELLOW}4.${NC} Enter password: ${GREEN}${BOLD}$ipv4${NC}"
     echo -e "${YELLOW}5.${NC} After successful login, come back here"
     echo -e "${YELLOW}6.${NC} Press ${BOLD}Ctrl+C${NC} to stop localtunnel"
-    echo -e "${YELLOW}7.${NC} Type ${GREEN}${BOLD}done${NC} when finished\n"
+    echo -e "${YELLOW}7.${NC} You can then reattach to screen with: ${GREEN}screen -r gensyn${NC}\n"
     
     read -p $'\e[1mPress ENTER to start localtunnel...\e[0m'
     
